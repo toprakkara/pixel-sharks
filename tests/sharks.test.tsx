@@ -194,7 +194,7 @@ test('a failed Bash command makes the sharks flee for a moment; other results do
   expect(svg).toContain('@keyframes fr3')
   expect(wellFormed(svg)).toBe(undefined)
 
-  await clock.advance(5000)
+  await clock.advance(7000)
   expect(await source(ui)).not.toContain('scat')
   await ui.unmount()
 })

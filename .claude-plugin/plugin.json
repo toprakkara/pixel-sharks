@@ -1,6 +1,6 @@
 {
   "name": "pixel-sharks",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Top-down pixel-art sharks that swim behind your Claude Code chat and react to what Claude is doing. Needs Claude Code v2.1.323+; shows in the desktop and mobile apps.",
   "author": { "name": "toprakkara" },
   "homepage": "https://github.com/toprakkara/pixel-sharks",

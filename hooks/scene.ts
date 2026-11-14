@@ -425,27 +425,61 @@ const CSS =
 const FLEE_RED = ['', '#3d0d0d', '#8c1a1a', '#d93a2b', '#ff8a70']
 
 /**
- * A failed Bash command makes the sharks flee: each one turns to face the
- * nearest side edge, goes red and darts off the screen with its tail
- * flicking fast. Off screen it turns back, loses the red and swims in again
+ * A failed Bash command makes the sharks flee. Each one goes red and darts
+ * across the screen, behind the chat, and out the far side: a dip toward the
+ * middle, a long straight run, a turn back and out, with the tail flicking
+ * fast. Off screen it loses the red, jumps to its own side and swims back in
  * to the spot its loop has reached, so nothing jumps when the scene redraws.
- * East is rotate(0) with the straight sprite; west is rotate(180).
  */
-const FLEE_S = 4.2
+const FLEE_S = 6
+
+/** The pose for a heading: rotation, and whether it uses the 45° sprite (east is rotate(0)). */
+const POSE = {
+  E: [0, false], SE: [0, true], SW: [90, true], W: [180, false], NW: [180, true], NE: [270, true],
+} as const
+type Heading = keyof typeof POSE
+
+/** One shark's flight: [percent, x, y, heading from there on]. */
+function flight(s: Shark): Array<[number, number, number, Heading]> {
+  const east = s.start[0] < 133
+  const sx = east ? 1 : -1
+  const sy = s.start[1] < 83 ? 1 : -1
+  const run: Heading = east ? 'E' : 'W'
+  const dip: Heading = east ? (sy > 0 ? 'SE' : 'NE') : (sy > 0 ? 'SW' : 'NW')
+  const rise: Heading = east ? (sy > 0 ? 'NE' : 'SE') : (sy > 0 ? 'NW' : 'SW')
+  const home = east ? -800 : 600
+
+  return [
+    [0, 0, 0, dip],
+    [6, 200 * sx, 200 * sy, run],
+    [26, 1200 * sx, 200 * sy, rise],
+    [32, 1400 * sx, 0, run],
+    [38, 1600 * sx, 0, run],
+    [38.1, home, 0, run],
+    [50, home, 0, run],
+    [100, 0, 0, run],
+  ]
+}
+
 const SCATTER =
   FLEE_RED.map((red, l) => (red === '' ? '' :
-    `.scat .l${l}{animation:fr${l} ${FLEE_S}s steps(1,end) 1 both}@keyframes fr${l}{0%{stroke:${red}}42%{stroke:${LEVEL[l]}}100%{stroke:${LEVEL[l]}}}`)).join('') +
+    `.scat .l${l}{animation:fr${l} ${FLEE_S}s steps(1,end) 1 both}@keyframes fr${l}{0%{stroke:${red}}38%{stroke:${LEVEL[l]}}100%{stroke:${LEVEL[l]}}}`)).join('') +
   SHARKS.map((s, i) => {
-    const west = s.start[0] < 133
-    const away = west ? 180 : 0
-    const dx = west ? -900 : 900
-    const at = (x: number) => `{transform:translate(${x}px,0)}`
+    const f = flight(s)
+    // Two blocks a step, whatever the length of the leg.
+    const mv = f.map(([p, x, y], k) => {
+      const nx = f[k + 1]
+      const n = nx === undefined ? 1 : Math.max(1, Math.round(Math.hypot(nx[1] - x, nx[2] - y) / 12))
 
-    return `.scat .s${i}{animation:sc${i} ${FLEE_S}s steps(75,end) 1 both}` +
-      `@keyframes sc${i}{0%${at(0)}28%${at(dx)}42%${at(dx)}100%${at(0)}}` +
-      `.scat .or${i}{animation:so${i} ${FLEE_S}s steps(1,end) 1 both}` +
-      `@keyframes so${i}{0%{transform:rotate(${away}deg)}42%{transform:rotate(${180 - away}deg)}100%{transform:rotate(${180 - away}deg)}}` +
-      `.scat .fa${i}{animation:none;opacity:1}.scat .fb${i}{animation:none;opacity:0}` +
+      return `${p}%{transform:translate(${x}px,${y}px);animation-timing-function:steps(${n},end)}`
+    }).join('')
+    const turn = f.map(([p, , , h]) => `${p}%{transform:rotate(${POSE[h][0]}deg)}`).join('')
+    const pose = (diag: boolean) => f.map(([p, , , h]) => `${p}%{opacity:${POSE[h][1] === diag ? 1 : 0}}`).join('')
+
+    return `.scat .s${i}{animation:sc${i} ${FLEE_S}s 1 both}@keyframes sc${i}{${mv}}` +
+      `.scat .or${i}{animation:so${i} ${FLEE_S}s steps(1,end) 1 both}@keyframes so${i}{${turn}}` +
+      `.scat .fa${i}{animation:sa${i} ${FLEE_S}s steps(1,end) 1 both}@keyframes sa${i}{${pose(false)}}` +
+      `.scat .fb${i}{animation:sb${i} ${FLEE_S}s steps(1,end) 1 both}@keyframes sb${i}{${pose(true)}}` +
       `.scat .s${i} .k0,.scat .s${i} .k1{animation-duration:.14s}.scat .s${i} .k1{animation-delay:-.07s}`
   }).join('')
 
@@ -514,7 +548,7 @@ function classes(...names: string[]): string {
 
 export function sceneAlt(phase: Phase, scared = false): string {
   if (scared) {
-    return 'The sharks turn red and flee off the screen'
+    return 'The sharks turn red and dart across the screen and away'
   }
   switch (phase) {
     case 'working':

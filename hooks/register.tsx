@@ -11,8 +11,8 @@ const DONE_MS = 9000
 const STOPPED_MS = 6000
 // Bubbles stay up for one full rise after the last tool ends: most tools finish in milliseconds.
 const HOLD_MS = 6500
-// How long the sharks flee after a failed Bash command (the animation is 4.2 s).
-const SCARE_MS = 4400
+// How long the sharks flee after a failed Bash command (the animation is 6 s).
+const SCARE_MS = 6200
 
 // Change the shape tag when the value's shape changes: new code then ignores what old code stored.
 const sea = atom(
