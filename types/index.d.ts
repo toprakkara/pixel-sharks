@@ -15,6 +15,14 @@ export type Sea = {
   rate: number
 }
 
+/** The scatter after a failed Bash command. */
+export type Scare = {
+  /** Failed Bash commands so far: a timer only ends its own scatter. */
+  n: number
+  /** Whether the sharks are scattering right now. */
+  on: boolean
+}
+
 declare module 'claude-code' {
   interface PluginState {
     'pixel-sharks': {
@@ -22,6 +30,7 @@ declare module 'claude-code' {
       tools: Shaped<number>
       /** Finished tool calls so far: the bubble timer checks it before clearing. */
       ends: Shaped<number>
+      scare: Shaped<Scare>
     }
   }
 }

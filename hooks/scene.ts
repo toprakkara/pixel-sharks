@@ -421,6 +421,22 @@ const CSS =
   '.dim{animation:dim 1.6s steps(8,end) 2}@keyframes dim{0%{opacity:1}50%{opacity:.12}100%{opacity:1}}' +
   KEYFRAMES
 
+/**
+ * A failed Bash command scatters the sharks: each one darts away from the
+ * middle of the screen, two blocks a step, holds, then swims back to its
+ * loop. The dart is short enough to keep it on screen. Tails flick fast
+ * while it lasts.
+ */
+const SCATTER = SHARKS.map((s, i) => {
+  const dx = s.start[0] < 133 ? -120 : 120
+  const dy = s.start[1] < 83 ? -60 : 60
+  const at = (x: number, y: number) => `{transform:translate(${x}px,${y}px)}`
+
+  return `.scat .s${i}{animation:sc${i} 2.4s steps(10,end) 1}` +
+    `@keyframes sc${i}{0%${at(0, 0)}15%${at(dx, dy)}70%${at(dx, dy)}100%${at(0, 0)}}` +
+    `.scat .s${i} .k0,.scat .s${i} .k1{animation-duration:.24s}.scat .s${i} .k1{animation-delay:-.12s}`
+}).join('')
+
 // ------------------------------------------------------------ states
 
 /**
@@ -440,8 +456,11 @@ export function timing(clock: number, rate: number): string {
   }).join('')
 }
 
-/** The scene for the current state; `full` says whether a tool is running right now. */
-export function buildScene(phase: Phase, clock: number, rate: number, full = false): string {
+/**
+ * The scene for the current state; `full` says whether bubbles rise, `scared`
+ * whether the sharks are scattering after a failed Bash command.
+ */
+export function buildScene(phase: Phase, clock: number, rate: number, full = false, scared = false): string {
   const sharks = SHARKS.map((s, i) => {
     const first = legs(s)[0]
     const isDiag = (first?.dir ?? 0) % 2 === 1
@@ -462,19 +481,29 @@ export function buildScene(phase: Phase, clock: number, rate: number, full = fal
 
   return (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">' +
-    `<style>${CSS}${timing(clock, rate)}</style>` +
+    `<style>${CSS}${timing(clock, rate)}${scared ? SCATTER : ''}</style>` +
     '<rect x="-400" y="-400" width="2400" height="1800" fill="#000"/>' +
     SPECKS +
     (phase === 'typing' ? SONAR : '') +
     (phase === 'working' && full ? BUBBLES : '') +
-    `<g${phase === 'stopped' ? ' class="dim"' : ''}>${sharks}</g>` +
+    `<g${classes(phase === 'stopped' ? 'dim' : '', scared ? 'scat' : '')}>${sharks}</g>` +
     GRID +
     '</svg>'
   )
 }
 
 /** For readers who cannot see the scene. */
-export function sceneAlt(phase: Phase): string {
+/** A class attribute for the names given, or nothing when there are none. */
+function classes(...names: string[]): string {
+  const list = names.filter(n => n !== '').join(' ')
+
+  return list === '' ? '' : ` class="${list}"`
+}
+
+export function sceneAlt(phase: Phase, scared = false): string {
+  if (scared) {
+    return 'The sharks scatter for a moment'
+  }
   switch (phase) {
     case 'working':
       return 'Top-down pixel-block sharks swimming on black'

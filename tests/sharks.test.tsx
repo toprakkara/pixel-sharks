@@ -167,6 +167,37 @@ test('a new tool call inside the hold keeps the bubbles up', async ($, on) => {
   await ui.unmount()
 })
 
+test('a failed Bash command scatters the sharks for a moment; other results do not', async ($, on) => {
+  const clock = mock.clock(on, { now: 1000 })
+  engine(on)
+  on('tool.call', (_, e) =>
+    'command' in e && e.command === 'false'
+      ? { isError: true as const, result: 'Exit code 1', text: 'Exit code 1' }
+      : e.tool === 'Read'
+        ? { isError: true as const, result: 'File does not exist.', text: 'File does not exist.' }
+        : { result: {} },
+  )
+
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const ui = await $.ui.mount({ ...BACKDROP, surface: 'desktop' })
+  await $.turn.start({ text: 'x', turnId: 't5' })
+
+  // A command that worked and a Read that failed leave the sharks on their loops.
+  await $.tool.call({ tool: 'Bash', command: 'ls' })
+  await $.tool.call({ tool: 'Read', file_path: '/missing' })
+  expect(await source(ui)).not.toContain('scat')
+
+  await $.tool.call({ tool: 'Bash', command: 'false' })
+  const svg = await source(ui)
+  expect(svg).toContain('<g class="scat">')
+  expect(svg).toContain('@keyframes sc0')
+  expect(wellFormed(svg)).toBe(undefined)
+
+  await clock.advance(3000)
+  expect(await source(ui)).not.toContain('scat')
+  await ui.unmount()
+})
+
 test('an interrupted turn dims the sharks for a moment, then they come back', async ($, on) => {
   const clock = mock.clock(on, { now: 1000 })
   engine(on)

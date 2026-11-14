@@ -11,6 +11,7 @@ Four species swim on a black sea, drawn in dithered grey blocks: a great white, 
 | When | What happens |
 |---|---|
 | Claude runs a tool | Columns of bubbles rise from the sea floor and stay up for a few seconds |
+| A Bash command fails | The sharks scatter toward the edges, then swim back |
 | A turn is interrupted or fails | The sharks dim for a moment |
 | You type in the prompt box | Sonar rings spread up from the bottom (if your app reports typing) |
 
