@@ -1,0 +1,14 @@
+{
+  "name": "pixel-sharks",
+  "description": "Top-down pixel-art sharks for the Claude Code desktop app.",
+  "owner": {
+    "name": "toprakkara"
+  },
+  "plugins": [
+    {
+      "name": "pixel-sharks",
+      "source": "./",
+      "description": "Top-down pixel-art sharks behind your Claude Code chat, reacting to what Claude is doing."
+    }
+  ]
+}
