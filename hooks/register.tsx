@@ -11,8 +11,8 @@ const DONE_MS = 9000
 const STOPPED_MS = 6000
 // Bubbles stay up for one full rise after the last tool ends: most tools finish in milliseconds.
 const HOLD_MS = 6500
-// How long the sharks scatter after a failed Bash command (the animation is 2.4 s).
-const SCARE_MS = 2600
+// How long the sharks flee after a failed Bash command (the animation is 4.2 s).
+const SCARE_MS = 4400
 
 // Change the shape tag when the value's shape changes: new code then ignores what old code stored.
 const sea = atom(
@@ -117,7 +117,7 @@ export const register: Register = on => {
     try {
       const result = await next(e)
 
-      // A Bash command that failed scatters the sharks.
+      // A Bash command that failed makes the sharks flee.
       if (e.tool === 'Bash' && result.isError === true) {
         await scatter($)
       }

@@ -167,7 +167,7 @@ test('a new tool call inside the hold keeps the bubbles up', async ($, on) => {
   await ui.unmount()
 })
 
-test('a failed Bash command scatters the sharks for a moment; other results do not', async ($, on) => {
+test('a failed Bash command makes the sharks flee for a moment; other results do not', async ($, on) => {
   const clock = mock.clock(on, { now: 1000 })
   engine(on)
   on('tool.call', (_, e) =>
@@ -191,9 +191,10 @@ test('a failed Bash command scatters the sharks for a moment; other results do n
   const svg = await source(ui)
   expect(svg).toContain('<g class="scat">')
   expect(svg).toContain('@keyframes sc0')
+  expect(svg).toContain('@keyframes fr3')
   expect(wellFormed(svg)).toBe(undefined)
 
-  await clock.advance(3000)
+  await clock.advance(5000)
   expect(await source(ui)).not.toContain('scat')
   await ui.unmount()
 })

@@ -157,7 +157,7 @@ function sprite(sp: Species, L: number, angleDeg: number, bendPhase: number): st
     }
   }
 
-  return rows.map((d, l) => (d === '' ? '' : `<path d="${d}" stroke="${LEVEL[l]}" stroke-width="${CELL}" fill="none"/>`)).join('')
+  return rows.map((d, l) => (d === '' ? '' : `<path class="l${l}" d="${d}" stroke="${LEVEL[l]}" stroke-width="${CELL}" fill="none"/>`)).join('')
 }
 
 // ------------------------------------------------------------- paths
@@ -421,21 +421,33 @@ const CSS =
   '.dim{animation:dim 1.6s steps(8,end) 2}@keyframes dim{0%{opacity:1}50%{opacity:.12}100%{opacity:1}}' +
   KEYFRAMES
 
-/**
- * A failed Bash command scatters the sharks: each one darts away from the
- * middle of the screen, two blocks a step, holds, then swims back to its
- * loop. The dart is short enough to keep it on screen. Tails flick fast
- * while it lasts.
- */
-const SCATTER = SHARKS.map((s, i) => {
-  const dx = s.start[0] < 133 ? -120 : 120
-  const dy = s.start[1] < 83 ? -60 : 60
-  const at = (x: number, y: number) => `{transform:translate(${x}px,${y}px)}`
+/** The red each grey level turns while a shark flees. */
+const FLEE_RED = ['', '#3d0d0d', '#8c1a1a', '#d93a2b', '#ff8a70']
 
-  return `.scat .s${i}{animation:sc${i} 2.4s steps(10,end) 1}` +
-    `@keyframes sc${i}{0%${at(0, 0)}15%${at(dx, dy)}70%${at(dx, dy)}100%${at(0, 0)}}` +
-    `.scat .s${i} .k0,.scat .s${i} .k1{animation-duration:.24s}.scat .s${i} .k1{animation-delay:-.12s}`
-}).join('')
+/**
+ * A failed Bash command makes the sharks flee: each one turns to face the
+ * nearest side edge, goes red and darts off the screen with its tail
+ * flicking fast. Off screen it turns back, loses the red and swims in again
+ * to the spot its loop has reached, so nothing jumps when the scene redraws.
+ * East is rotate(0) with the straight sprite; west is rotate(180).
+ */
+const FLEE_S = 4.2
+const SCATTER =
+  FLEE_RED.map((red, l) => (red === '' ? '' :
+    `.scat .l${l}{animation:fr${l} ${FLEE_S}s steps(1,end) 1 both}@keyframes fr${l}{0%{stroke:${red}}42%{stroke:${LEVEL[l]}}100%{stroke:${LEVEL[l]}}}`)).join('') +
+  SHARKS.map((s, i) => {
+    const west = s.start[0] < 133
+    const away = west ? 180 : 0
+    const dx = west ? -900 : 900
+    const at = (x: number) => `{transform:translate(${x}px,0)}`
+
+    return `.scat .s${i}{animation:sc${i} ${FLEE_S}s steps(75,end) 1 both}` +
+      `@keyframes sc${i}{0%${at(0)}28%${at(dx)}42%${at(dx)}100%${at(0)}}` +
+      `.scat .or${i}{animation:so${i} ${FLEE_S}s steps(1,end) 1 both}` +
+      `@keyframes so${i}{0%{transform:rotate(${away}deg)}42%{transform:rotate(${180 - away}deg)}100%{transform:rotate(${180 - away}deg)}}` +
+      `.scat .fa${i}{animation:none;opacity:1}.scat .fb${i}{animation:none;opacity:0}` +
+      `.scat .s${i} .k0,.scat .s${i} .k1{animation-duration:.14s}.scat .s${i} .k1{animation-delay:-.07s}`
+  }).join('')
 
 // ------------------------------------------------------------ states
 
@@ -458,7 +470,7 @@ export function timing(clock: number, rate: number): string {
 
 /**
  * The scene for the current state; `full` says whether bubbles rise, `scared`
- * whether the sharks are scattering after a failed Bash command.
+ * whether the sharks are fleeing after a failed Bash command.
  */
 export function buildScene(phase: Phase, clock: number, rate: number, full = false, scared = false): string {
   const sharks = SHARKS.map((s, i) => {
@@ -502,7 +514,7 @@ function classes(...names: string[]): string {
 
 export function sceneAlt(phase: Phase, scared = false): string {
   if (scared) {
-    return 'The sharks scatter for a moment'
+    return 'The sharks turn red and flee off the screen'
   }
   switch (phase) {
     case 'working':
